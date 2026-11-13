@@ -5,3 +5,6 @@ functions/.secret.local
 functions/.env*
 firepit-log.txt
 .firebase/
+node_modules/
+web/dist/
+*-debug.log

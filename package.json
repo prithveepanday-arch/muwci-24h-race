@@ -1,0 +1,24 @@
+{
+  "name": "muwci-24h-race",
+  "version": "1.0.0",
+  "description": "A real-time race-management dashboard for the MUWCI 24 Hour Race.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kavinag1/muwci-24h-race.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kavinag1/muwci-24h-race/issues"
+  },
+  "homepage": "https://github.com/kavinag1/muwci-24h-race#readme",
+  "devDependencies": {
+    "firebase-tools": "14.11.1"
+  }
+}

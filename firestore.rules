@@ -1,14 +1,17 @@
-// Public spectators may read the single live race snapshot.
-// Every browser write is denied. The raceAdmin Cloud Function verifies the
-// event PIN and uses the Admin SDK to perform validated, revision-checked writes.
+// Spectators may read the live race and its laps. Browsers can never write:
+// every change goes through the raceOp Cloud Function, which checks the PIN,
+// validates the change and records it in the audit log.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /raceSnapshots/{snapshotId} {
-      allow read: if snapshotId == 'main';
-      allow create, update, delete: if false;
+    match /races/main {
+      allow read: if true;
+      allow write: if false;
+      match /laps/{lapId} {
+        allow read: if true;
+        allow write: if false;
+      }
     }
-
     match /{document=**} {
       allow read, write: if false;
     }
