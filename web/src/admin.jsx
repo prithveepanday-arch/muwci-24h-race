@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { HOUR, activeRunners, legElapsed, raceEndAt, raceRemaining, raceStatus, runnerName } from "@logic";
-import { exportBackup, login, logout, relogin, restoreBackup, retryNow, serverNow, store, submit, uid } from "./store.js";
+import { exportBackup, loadLegacyTeams, login, logout, relogin, restoreBackup, retryNow, serverNow, store, submit, uid } from "./store.js";
 import { fmtClock, fmtDuration, fmtTime, fmtTimeSec, raceEvents, standings } from "./derive.js";
 import { Feed, Link, Logo, Modal, RaceClock, StatusPill, navigate, parseDuration, useDialogs, useLocalState, useNow, useStore } from "./ui.jsx";
 
@@ -464,7 +464,7 @@ function Settings() {
 function Teams() {
   const v = useStore();
   const act = useAct();
-  const { ask } = useDialogs();
+  const { ask, toast } = useDialogs();
   const [editing, setEditing] = useState(null);
   const [importing, setImporting] = useState(false);
   const teams = Object.values(v.state.teams).sort((a, b) => a.order - b.order);
@@ -473,6 +473,37 @@ function Teams() {
     const ids = teams.map((t) => t.id);
     [ids[i], ids[i + d]] = [ids[i + d], ids[i]];
     act({ type: "team.reorder", teamIds: ids });
+  };
+  const importLegacy = async () => {
+    let legacy;
+    try {
+      legacy = await loadLegacyTeams();
+    } catch (e) {
+      toast(`Couldn't read the old system: ${e.message}`, { error: true });
+      return;
+    }
+    if (!legacy.length) return toast("No teams found in the old system.", { error: true });
+    const yes = await ask({
+      title: `Import ${legacy.length} teams?`,
+      body: `${legacy.map((t) => `${t.name} (${t.runners.length})`).join(" · ")}. Teams with the same name here are updated; nothing is deleted.`,
+      confirmText: "Import teams",
+    });
+    if (!yes) return;
+    let ok = 0;
+    for (const t of legacy) {
+      const match = teams.find((e) => e.name.toLowerCase() === t.name.toLowerCase());
+      const op = await act({
+        type: "team.save",
+        team: {
+          id: match?.id || `t${uid().slice(0, 10)}`,
+          name: t.name,
+          color: match?.color || t.color,
+          runners: t.runners.map((n) => ({ id: match?.runners.find((r) => r.name.toLowerCase() === n.toLowerCase())?.id || `r${uid().slice(0, 10)}`, name: n, active: true })),
+        },
+      });
+      if (op) ok += 1;
+    }
+    toast(`${ok} of ${legacy.length} teams imported.`);
   };
   const remove = async (t) => {
     if (await ask({ title: `Delete ${t.name}?`, body: "The team and its running order are removed.", confirmText: "Delete team", danger: true })) act({ type: "team.delete", teamId: t.id }, { success: `${t.name} deleted.` });
@@ -485,6 +516,7 @@ function Teams() {
           <p className="muted small">{teams.length} teams · {teams.reduce((n, t) => n + activeRunners(t).length, 0)} runners. The runner order is the running order.</p>
         </div>
         <span className="spacer" />
+        <button className="btn" onClick={importLegacy}>Import last year's teams</button>
         <button className="btn" onClick={() => setImporting(true)}>Paste a team list</button>
         <button className="btn btn-primary" onClick={() => setEditing({ id: `t${uid().slice(0, 10)}`, name: "", color: TEAM_COLORS[teams.length % TEAM_COLORS.length], runners: [], isNew: true })}>Add team</button>
       </div>

@@ -19,11 +19,9 @@ export function TV() {
   const rec = useMemo(() => records(v.state, v.laps), [v.state, v.laps]);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = "dark";
     const t = setInterval(() => setPanel((p) => (p + 1) % PANELS.length), ROTATE_MS);
     const wake = navigator.wakeLock?.request?.("screen").catch(() => null);
     return () => {
-      delete document.documentElement.dataset.theme;
       clearInterval(t);
       Promise.resolve(wake).then((w) => w?.release?.());
     };
@@ -34,7 +32,7 @@ export function TV() {
   };
 
   // Fit every team: row height shares the available space.
-  const rowH = `calc((100vh - 31vh) / ${Math.max(rows.length, 8)})`;
+  const rowH = `calc((100vh - 36vh) / ${Math.max(rows.length, 8)})`;
   const tickerItems = [...activeAnnouncements.map((a) => a.text), ...events.filter((e) => e.kind !== "ann").slice(0, 6).map((e) => e.text)];
   const latest = v.laps.slice(-7).reverse();
   const due = rows.filter((r) => r.expectedAt).sort((a, b) => a.expectedAt - b.expectedAt).slice(0, 8);
@@ -42,7 +40,7 @@ export function TV() {
   const showBanner = banner && now - banner.createdAt < 20_000;
 
   return (
-    <div className="tv theme-dark" onDoubleClick={fullscreen} title="Double-click for full screen">
+    <div className="tv" onDoubleClick={fullscreen} title="Double-click for full screen">
       <header className="tv-top">
         <div className="tv-brand">
           <Logo size={64} />
@@ -67,12 +65,11 @@ export function TV() {
       <main className="tv-main">
         <section className="tv-table" aria-label="Standings">
           <div className="tv-row head">
-            <span>Pos</span><span /><span>Team · on track</span><span style={{ textAlign: "right" }}>Laps</span><span style={{ textAlign: "right" }}>Gap</span><span style={{ textAlign: "right" }}>Avg lap</span><span style={{ textAlign: "right" }}>Lap time</span>
+            <span>Pos</span><span>Team · on track</span><span style={{ textAlign: "right" }}>Laps</span><span style={{ textAlign: "right" }}>Gap</span><span style={{ textAlign: "right" }}>Avg lap</span><span style={{ textAlign: "right" }}>Lap time</span>
           </div>
           {rows.map((r) => (
             <div key={r.id} className={`tv-row ${r.rank === 1 ? "leader" : ""}`} style={{ height: rowH }}>
-              <span className="pos display">{r.rank}</span>
-              <span className="bar" style={{ background: r.color }} />
+              <span className="pos display" style={{ background: r.color }}>{r.rank}</span>
               <div style={{ minWidth: 0 }}>
                 <div className="name">{r.name}</div>
                 <div className="sub">{r.currentRunner}{fmtAhead(r) ? ` · ${fmtAhead(r)}` : ""}</div>

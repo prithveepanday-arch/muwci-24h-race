@@ -12,6 +12,11 @@ service cloud.firestore {
         allow write: if false;
       }
     }
+    // Last year's record, read once to import its teams.
+    match /raceSnapshots/main {
+      allow read: if true;
+      allow write: if false;
+    }
     match /{document=**} {
       allow read, write: if false;
     }

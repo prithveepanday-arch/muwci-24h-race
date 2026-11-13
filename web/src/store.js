@@ -11,6 +11,7 @@
 import { initializeApp } from "firebase/app";
 import {
   collection,
+  getDocFromServer,
   connectFirestoreEmulator,
   doc,
   initializeFirestore,
@@ -424,6 +425,23 @@ export async function restoreBackup(backup) {
 export function exportBackup() {
   const v = store.get();
   return { kind: "muwci-race-backup", version: 2, exportedAt: new Date().toISOString(), state: v.state, laps: v.laps };
+}
+
+/** Teams from last year's system (raceSnapshots/main), for one-click import. */
+export async function loadLegacyTeams() {
+  if (!db) throw new Error("Still connecting. Try again in a moment.");
+  const snap = await getDocFromServer(doc(db, "raceSnapshots", "main"));
+  if (!snap.exists()) return [];
+  const teams = JSON.parse(snap.data().teamsJson || "[]");
+  return teams.map((t) => {
+    const seen = new Map();
+    const runners = (t.members || []).map((m) => String(m).replace(/\s+/g, " ").trim().slice(0, 40)).filter(Boolean).map((name) => {
+      const k = name.toLowerCase();
+      seen.set(k, (seen.get(k) || 0) + 1);
+      return seen.get(k) > 1 ? `${name} (${seen.get(k)})` : name;
+    });
+    return { name: String(t.name || "Team").trim().slice(0, 40), color: /^#[0-9a-f]{6}$/i.test(t.color) ? t.color.toLowerCase() : "#1f5a60", runners };
+  });
 }
 
 export const storageKeys = KEY;
